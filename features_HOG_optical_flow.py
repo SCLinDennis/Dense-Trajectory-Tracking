@@ -20,9 +20,9 @@ args = vars(ap.parse_args())
 
 #load the features
 row = np.load('C://Users/user/feats_npy_file/person01_feats.npy')
-[i, j] = row.shape
-i = int(i)
-j = int(j)
+[width, length] = row.shape
+width = int(width)
+length = int(length)
 
 # Parameters for ShiTomasi corner detection
 feature_params = dict( maxCorners = 100,
@@ -111,8 +111,8 @@ while True:
     for (x_rect, y_rect, w_rect, h_rect) in rects:
                 cv2.rectangle(orig_resized, (x_rect, y_rect), (x_rect + w_rect, y_rect + h_rect), (0, 0, 255), 2)
 
-    #cv2.imshow("resized", resized)  
-    for e in range(i):
+    
+    for e in range(width):
         if row[e,0] == count:
             (x,y) = (row[e,1], row[e,2])
             #cv2.circle(resized, (int(x*r), int(y*r)), int(1),(0, 255, 255), 2)
