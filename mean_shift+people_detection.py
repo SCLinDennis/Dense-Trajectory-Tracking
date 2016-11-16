@@ -36,7 +36,7 @@ else:
 
 # take first frame of the video
 (grabbed,frame) = camera.read()
-(rects, weights) = hog.detectMultiScale(frame, winStride=(4, 4), padding=(8, 8), scale=1.1)
+(rects, weights) = hog.detectMultiScale(frame, winStride=(4, 4), padding=(8, 8), scale=1.25)
 rects = np.array([[x, y, x + w, y + h] for (x, y, w, h) in rects])
 #rects = np.array([[x, y, x + w, y + h] for (x, y, w, h) in rects])
 pick = non_max_suppression(rects, probs=None, overlapThresh=0.65)
@@ -45,15 +45,10 @@ pick = non_max_suppression(rects, probs=None, overlapThresh=0.65)
 ###################mean_shift###########
 # setup initial location of window
 # r,h,c,w - region of image
-#           simply hardcoded the values
-#r,c,w,h = pick[0,0], pick[0,1], (pick[0,2]-pick[0,0]),(pick[0,3]-pick[0,1])   
-
-r,c,w,h = pick[0,0], pick[0,1], 60, 300
-#           354             164                  104          328       
-track_window = (r,c,w,h) # I have changed
+#           simply hardcoded the values    
+track_window2 = np.array([[pick[i,0], pick[i,1], 150,300] for i in range(pick.shape[0])])
 
 # set up the ROI for tracking
-roi = frame[r:r+w, c:c+h]
 hsv_roi =  cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 #threshold the HSV image to get certain color
 mask = cv2.inRange(hsv_roi, np.array((0., 0.,0.)), np.array((30.,30.,30.)))
@@ -73,11 +68,19 @@ while(1):
         dst = cv2.calcBackProject([hsv],[0],roi_hist,[0,180],1)
 
         # apply meanshift to get the new location
-        grabbed, track_window = cv2.meanShift(dst, track_window, term_crit)
-
+        #grabbed2 = grabbed.copy()
+        arr1  =   np.array(track_window2[0])
+        arr2  =   np.array(track_window2[1])    
+        track_window3 = tuple(arr1)
+        track_window4 = tuple(arr2)
+        grabbed, track_window3 = cv2.meanShift(dst, track_window3, term_crit)
+        grabbed, track_window4 = cv2.meanShift(dst, track_window4, term_crit)
+        x1,y1,w1,h1 = track_window3
+        x2,y2,w2,h2 = track_window4        
+            
         # Draw it on image
-        x,y,w,h = track_window
-        cv2.rectangle(frame, (x,y), (x+w,y+h), 255,2)
+        cv2.rectangle(frame, (x1,y1), (x1+w1,y1+h1), (0,255,0),2)
+        cv2.rectangle(frame, (x2,y2), (x2+w2,y2+h2), (0,0,255),2)
         cv2.imshow('img2',frame)
 #        cv2.imshow(dst)
 
