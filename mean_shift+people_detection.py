@@ -1,54 +1,31 @@
 # -*- coding: utf-8 -*-
 """
-Created on Sat Nov 19 15:20:12 2016
+Created on Wed Nov 16 11:21:40 2016
 
-@author: Shih-Chen Lin
+@author: user
 """
-
 #mean shift 
 import numpy as np
 import cv2
-
+#people detection 
+#from __future__ import print_function
 from imutils.object_detection import non_max_suppression
 import argparse
 #import imutils
 import time
 
-def biggerwindow(pick,original_window):
-    if pick.shape[0] >= 2:
-        pick2 = np.zeros((2,4))
-        distance = np.zeros((pick.shape[0]))    
-        for i,(xA, yA, xB, yB) in enumerate(pick):
-                tmp1 = np.array([xA, yA])
-                tmp2 = np.array([xB, yB])
-                distance[i] = np.linalg.norm(tmp1-tmp2)
-                index_max_tmp = np.array(distance).argsort()[::-1][:2]
-        np.sort(index_max_tmp)
-        for j in range(pick2.shape[0]):
-            pick2[j] = pick[index_max_tmp[j]]
-            pick2 = np.int64(pick2) 
-    elif pick.shape[0] <= 1:
-        pick2 = np.zeros((2,4))
-        pick2 = original_window
-    return pick2
-    
-def euclidean (track_windowA, track_windowB):
-                #2*4            2*4
-    if track_windowA.shape[0] != 2:
-        print(track_windowA.shape[0])
-    for i in range(2):
-        dist0 = np.zeros(2)
-        dist0[i] = np.linalg.norm(track_windowA[0]-track_windowB[i])
-    if dist0[1]<dist0[0]:
-        track_windowA = np.array(track_windowA[1],track_windowA[0])
-    else:
-        track_windowA = track_windowA
-    return track_windowA;
-
 # construct the argument parse and parse the arguments
 ap = argparse.ArgumentParser()
 ap.add_argument("-v", "--video", default="/Users/DennisLin/Videos/April30_2sentence1.mp4", help="the path for video")
 args = vars(ap.parse_args())
+
+
+## evaluate the command line arguments (using the eval function like
+## this is not good form, but let's tolerate it for the example)
+#winStride = (8, 8)
+#padding = (16, 16)
+#meanShift = True if -1 > 0 else False
+
 
 # initialize the HOG descriptor/person detector
 hog = cv2.HOGDescriptor()
@@ -66,8 +43,9 @@ else:
 #camera = cv2.VideoCapture('D://Videos/slow_traffic_small.mp4')
 
 # take first frame of the video
-(grabbed,frame) = camera.read()
-(rects, weights) = hog.detectMultiScale(frame, winStride=(4, 4), padding=(16, 16), scale=1.05)
+(grabbed,frame_old) = camera.read()
+frame = frame_old[:,100:769,:]
+(rects, weights) = hog.detectMultiScale(frame, winStride=(4, 4), padding=(32,32), scale=1.05)
 rects = np.array([[x, y, x + w, y + h] for (x, y, w, h) in rects])
 #rects = np.array([[x, y, x + w, y + h] for (x, y, w, h) in rects])
 pick = non_max_suppression(rects, probs=None, overlapThresh=0.65)
@@ -77,7 +55,8 @@ pick = non_max_suppression(rects, probs=None, overlapThresh=0.65)
 # setup initial location of window
 # r,h,c,w - region of image
 #           simply hardcoded the values    
-track_window2 = np.array([[pick[i,0], pick[i,1], 75,300] for i in range(pick.shape[0])])
+#track_window2 = np.array([[pick[i,0], pick[i,1], pick[i,0]+10,pick[i,1]+100] for i in range(pick.shape[0])])
+track_window2 = np.array([[pick[0,0], pick[0,1], pick[0,0]+10,pick[0,1]+10],[pick[1,0], pick[1,1], pick[1,0]+10,pick[1,1]+10]])
 
 # set up the ROI for tracking
 hsv_roi =  cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
@@ -89,21 +68,13 @@ cv2.normalize(roi_hist,roi_hist,0,255,cv2.NORM_MINMAX)
 
 # Setup the termination criteria, either 10 iteration or move by at least 1 pt
 term_crit = ( cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 10, 1 )
-frame_num = 0;
+
 while(1):
     #bool ret if is 1, read correctly
-    grabbed ,frame = camera.read()
-    if grabbed == True:
-        if (frame_num % 30 == 0) and (frame_num != 0):
-            print('Checking Tracking Window')           
-            (new_rects, new_weights) = hog.detectMultiScale(frame, winStride=(4, 4), padding=(16, 16), scale=1.05)
-            new_rects2 = np.array([[new_x, new_y, new_x + new_w, new_y + new_h] for (new_x, new_y, new_w, new_h) in new_rects])
-            new_pick_tmp = non_max_suppression(new_rects2, probs=None, overlapThresh=0.65)
-            new_pick = biggerwindow(new_pick_tmp,track_window2)
-            track_window_tmp = np.array([[new_pick[j,0], new_pick[j,1], 75,300] for j in range(new_pick.shape[0])])
-            track_window2 = euclidean(track_window_tmp,track_window2)
-            cv2.putText(frame, "window Status: {Checking}", (10, 20),cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
+    (grabbed ,frame_old) = camera.read()
+    frame = frame_old[:,100:769,:]
 
+    if grabbed == True:
         hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
         dst = cv2.calcBackProject([hsv],[0],roi_hist,[0,180],1)
 
@@ -115,24 +86,20 @@ while(1):
         track_window4 = tuple(arr2)
         grabbed, track_window3 = cv2.meanShift(dst, track_window3, term_crit)
         grabbed, track_window4 = cv2.meanShift(dst, track_window4, term_crit)
-        cv2.putText(frame, "window Status: {Meanshift Tracking}", (10, 20),cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
-
         x1,y1,w1,h1 = track_window3
         x2,y2,w2,h2 = track_window4        
             
         # Draw it on image
         cv2.rectangle(frame, (x1,y1), (x1+w1,y1+h1), (0,255,0),2)
-        cv2.rectangle(frame, (x2,y2), (x2+w2,y2+h2), (0,0,255),2)                
+        cv2.rectangle(frame, (x2,y2), (x2+w2,y2+h2), (0,0,255),2)
         cv2.imshow('img2',frame)
 #        cv2.imshow(dst)
 
-        k = cv2.waitKey(30) & 0xff
+        k = cv2.waitKey(1) & 0xff
         if k == ord("q"):
             break
     else:
         break
-        print('false')
-    frame_num +=1
 
 cv2.destroyAllWindows()
 camera.release()
