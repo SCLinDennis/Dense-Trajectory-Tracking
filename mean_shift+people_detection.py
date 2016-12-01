@@ -8,8 +8,7 @@ Created on Sat Nov 19 15:20:12 2016
 #mean shift 
 import numpy as np
 import cv2
-#people detection 
-#from __future__ import print_function
+
 from imutils.object_detection import non_max_suppression
 import argparse
 #import imutils
