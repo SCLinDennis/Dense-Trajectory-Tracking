@@ -118,16 +118,33 @@ while True:
     orig_resized = resized.copy()
     (rects, weights) = hog.detectMultiScale(resized, winStride=(8, 8),
 		padding=(8, 8), scale=1.05)
-  
+    
+    frame_index = np.where(row[:,0]==count)
+#    frame_index = np.array(frame_index)
+#    for t in frame_index:
+#        test = np.array([[row[t,1] ,row[t,2]])
+    test = row[frame_index,1:3]
+    test = test[0,:,:]
     for (x_rect, y_rect, w_rect, h_rect) in rects:
-        for f in range(width):
-            if row[f,0] == count:
-                (x1,y1) = (row[f,1], row[f,2])
-                if (x_rect < int(x1*r)) and (int(x1*r) < (x_rect+w_rect)) and (y_rect < int(y1*r)) and (int(y1*r) < (y_rect+h_rect)):
-                    cv2.rectangle(orig_resized, (x_rect, y_rect), (x_rect + w_rect, y_rect + h_rect), (0, 0, 255), 2)
-                    record_temp = [count,x_rect,y_rect,x_rect+w_rect,y_rect+h_rect]
-                    record.append(record_temp)
-                    record_info = np.array(record)
+        for  (x_point, y_point) in test:
+            if (x_rect < int(x_point*r)) and (int(x_point*r) < (x_rect+w_rect)) and (y_rect < int(y_point*r)) and (int(y_point*r) < (y_rect+h_rect)):
+                    #cv2.rectangle(orig_resized, (x_rect, y_rect), (x_rect + w_rect, y_rect + h_rect), (0, 0, 255), 2)
+                cv2.circle(orig_resized, (int(x_point*r), int(y_point*r)), int(1),(0, 255, 255), 2) 
+                cv2.rectangle(orig_resized, (x_rect, y_rect), (x_rect + w_rect, y_rect + h_rect), (0, 0, 255), 2)
+                record_temp = [count,x_rect,y_rect,x_rect+w_rect,y_rect+h_rect]
+                record.append(record_temp)
+                record_info = np.array(record)
+  
+    
+#    for (x_rect, y_rect, w_rect, h_rect) in rects:
+#        for f in range(width):
+#            if row[f,0] == count:
+#                (x1,y1) = (row[f,1], row[f,2])
+#                if (x_rect < int(x1*r)) and (int(x1*r) < (x_rect+w_rect)) and (y_rect < int(y1*r)) and (int(y1*r) < (y_rect+h_rect)):
+#                    cv2.rectangle(orig_resized, (x_rect, y_rect), (x_rect + w_rect, y_rect + h_rect), (0, 0, 255), 2)
+#                    record_temp = [count,x_rect,y_rect,x_rect+w_rect,y_rect+h_rect]
+#                    record.append(record_temp)
+#                    record_info = np.array(record)
         
     
     #ditinguish   130 is the middle
@@ -183,28 +200,28 @@ while True:
 
     
     #plot the trajectory features in the rect
-    for e in range(width):
-        if row[e,0] == count:
-            (x,y) = (row[e,1], row[e,2])
-            for (x_rect, y_rect, w_rect, h_rect) in rects:
-                if (x_rect < int(x*r)) and (int(x*r) < (x_rect+w_rect)) and (y_rect < int(y*r)) and (int(y*r) < (y_rect+h_rect)):
-                    cv2.circle(orig_resized, (int(x*r), int(y*r)), int(1),(0, 255, 255), 2)                    
-            rects_nms = np.array([[x_rect, y_rect, x_rect + w_rect, y_rect + h_rect] for (x_rect, y_rect, w_rect, h_rect) in rects])
-            pick = non_max_suppression(rects_nms, probs=None, overlapThresh=0.65)
-            for (xA, yA, xB, yB) in pick:
-                if (xA < int(x*r)) and (int(x*r) < (xB)) and (yA < int(y*r)) and (int(y*r) < (yB)):
-                    cv2.circle(resized, (int(x*r), int(y*r)), int(1),(0, 255, 255), 2)
-    #plot rect after NMS
-    for (xA, yA, xB, yB) in pick:
-                cv2.rectangle(resized, (xA, yA), (xB, yB), (0, 255, 0), 2)
+#    for e in range(width):
+#        if row[e,0] == count:
+#            (x,y) = (row[e,1], row[e,2])
+#            for (x_rect, y_rect, w_rect, h_rect) in rects:
+#                if (x_rect < int(x*r)) and (int(x*r) < (x_rect+w_rect)) and (y_rect < int(y*r)) and (int(y*r) < (y_rect+h_rect)):
+#                    cv2.circle(orig_resized, (int(x*r), int(y*r)), int(1),(0, 255, 255), 2)                    
+#            rects_nms = np.array([[x_rect, y_rect, x_rect + w_rect, y_rect + h_rect] for (x_rect, y_rect, w_rect, h_rect) in rects])
+#            pick = non_max_suppression(rects_nms, probs=None, overlapThresh=0.65)
+#            for (xA, yA, xB, yB) in pick:
+#                if (xA < int(x*r)) and (int(x*r) < (xB)) and (yA < int(y*r)) and (int(y*r) < (yB)):
+#                    cv2.circle(resized, (int(x*r), int(y*r)), int(1),(0, 255, 255), 2)
+#    #plot rect after NMS
+#    for (xA, yA, xB, yB) in pick:
+#                cv2.rectangle(resized, (xA, yA), (xB, yB), (0, 255, 0), 2)
                 
-    cv2.imshow("After_NMS_Frame", resized)
+#    cv2.imshow("After_NMS_Frame", resized)
     cv2.imshow("Before_NMS_Fram", orig_resized)
     
     
     #store old rect coordinate    
     (rects_old, weights_old) = (rects, weights)
-    pick_old = pick
+#    pick_old = pick
 
     key = cv2.waitKey(1) & 0xFF
     if key == ord("q"):
