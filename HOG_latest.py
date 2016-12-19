@@ -14,6 +14,7 @@ from imutils.object_detection import non_max_suppression
 
 ap = argparse.ArgumentParser()
 ap.add_argument("-v", "--video",default="/Users/DennisLin/Videos/April30_2sentence1.mp4", help="Path to the file")
+ap.add_argument("-f", "--features", default='/Users/DennisLin/feats_npy_file/{April30_2sentence1.mpg}_out_features.npy', help="Path to the file")
 ap.add_argument("-a", "--min-area", type=int, default=300, help="minimum area size")
 args = vars(ap.parse_args())
 
@@ -21,7 +22,9 @@ hog = cv2.HOGDescriptor()
 hog.setSVMDetector(cv2.HOGDescriptor_getDefaultPeopleDetector())
 
 #load the features
-row = np.load('/Users/DennisLin/feats_npy_file/{April30_2sentence1.mpg}_out_features.npy')
+row = np.load(args["features"])
+
+#row = np.load('/Users/DennisLin/feats_npy_file/{April30_2sentence1.mpg}_out_features.npy')
 [width, length] = row.shape
 width = int(width)
 length = int(length)
@@ -101,6 +104,7 @@ person_B_info = np.array(person_B)
 count = 0
 
 while True:
+    
     # grab the current frame
     (grabbed, frame) = camera.read()
     
@@ -125,17 +129,20 @@ while True:
 #        test = np.array([[row[t,1] ,row[t,2]])
     test = row[frame_index,1:3]
     test = test[0,:,:]
-    for (x_rect, y_rect, w_rect, h_rect) in rects:
+    rects_nms = np.array([[x_rect, y_rect, x_rect + w_rect, y_rect + h_rect] for (x_rect, y_rect, w_rect, h_rect) in rects])
+    pick = non_max_suppression(rects_nms, probs=None, overlapThresh=0.65)
+
+    for (x1, y1, x2, y2) in pick:
         for  (x_point, y_point) in test:
-            if (x_rect < int(x_point*r)) and (int(x_point*r) < (x_rect+w_rect)) and (y_rect < int(y_point*r)) and (int(y_point*r) < (y_rect+h_rect)):
+            if (x1 < int(x_point*r)) and (int(x_point*r) < (x2)) and (y1 < int(y_point*r)) and (int(y_point*r) < (y2)):
                     #cv2.rectangle(orig_resized, (x_rect, y_rect), (x_rect + w_rect, y_rect + h_rect), (0, 0, 255), 2)
                 cv2.circle(orig_resized, (int(x_point*r), int(y_point*r)), int(1),(0, 255, 255), 2) 
-                cv2.rectangle(orig_resized, (x_rect, y_rect), (x_rect + w_rect, y_rect + h_rect), (0, 0, 255), 2)
-                record_temp = [count,x_rect,y_rect,x_rect+w_rect,y_rect+h_rect]
+                cv2.rectangle(orig_resized, (x1, y1), (x2, y2), (0, 255, 0), 2)
+                record_temp = [count,x1,y1,x2,y2]
                 record.append(record_temp)
                 record_info = np.array(record)
   
-    
+    cv2.putText(orig_resized, "Frame_index: {}".format(count), (10, 20),cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
 #    for (x_rect, y_rect, w_rect, h_rect) in rects:
 #        for f in range(width):
 #            if row[f,0] == count:
@@ -216,7 +223,7 @@ while True:
 #                cv2.rectangle(resized, (xA, yA), (xB, yB), (0, 255, 0), 2)
                 
 #    cv2.imshow("After_NMS_Frame", resized)
-    cv2.imshow("Before_NMS_Fram", orig_resized)
+    cv2.imshow("After_NMS_Fram", orig_resized)
     
     
     #store old rect coordinate    
@@ -227,7 +234,7 @@ while True:
     if key == ord("q"):
         break
     count +=1
-
+np.save('record_info.npy', record_info)
 # cleanup the camera and close any open windows
 camera.release()
 cv2.destroyAllWindows()
