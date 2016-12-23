@@ -1,5 +1,7 @@
 # 林詩宸(Shih-Chen Lin)  
-# BiiC Lab
+# BiiC Lab 
+# National Hsing Hua University, HsinChu, Taiwan
+ 
 
 ## Senior Project / Learning Human Emotion from Actor's Interaction in Drama Rehearsal Clips
 
