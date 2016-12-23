@@ -19,18 +19,18 @@ def selectwindow(record_info_clear):
     checkpoint = 0 #if 0 then a, if 1 then b
     person_A = []
     person_B = []
-    if record_info_clear[0,1] < 130: #initialize
-        person_A_temp = record_info_clear[0]
-        person_A.append(person_A_temp)
-        person_A_info = np.array(person_A)
-        person_B_info = np.array([])
-        checkpoint = 0
-    elif record_info_clear[0,1] > 130:
-        person_B_temp = record_info_clear[0]
-        person_B.append(person_B_temp)
-        person_B_info = np.array(person_B)
-        person_A_info = np.array([])
-        checkpoint = 1
+#    if record_info_clear[0,1] < 130: #initialize
+    person_A_temp = record_info_clear[0]
+    person_A.append(person_A_temp)
+    person_A_info = np.array(person_A)
+    person_B_info = np.array([])
+    checkpoint = 0
+#    elif record_info_clear[0,1] > 130:
+#        person_B_temp = record_info_clear[0]
+#        person_B.append(person_B_temp)
+#        person_B_info = np.array(person_B)
+#        person_A_info = np.array([])
+#        checkpoint = 1
     [row_record_info_clear,col_record_info_clear] = np.shape(record_info_clear)
 
 #    index_A = 0
@@ -81,20 +81,27 @@ def selectwindow(record_info_clear):
                 person_A_info = np.array(person_A) 
                 checkpoint = 0            
     return (person_A_info, person_B_info)
+def unique_rows(a):
+    a = np.ascontiguousarray(a)
+    unique_a = np.unique(a.view([('', a.dtype)]*a.shape[1]))
+    return unique_a.view(a.dtype).reshape((unique_a.shape[0], a.shape[1]))
+    
 AnswerA = np.array([])
 AnswerB = np.array([])
-#record_info_clear = unique_rows(record_info)
-record_info_clear = np.load('/Users/DennisLin/tmp/record_info_clear.npy')
+record_info2 = np.load('/Users/DennisLin/record_info_npy/record_info_correct.npy')
+record_info_clear = unique_rows(record_info2)
+#record_info_clear = np.load('/Users/DennisLin/tmp/ecord_info_clear_NMS.npy')
+#record_info_clear2 = np.load('/Users/DennisLin/tmp/ecord_info_clear_NMS.npy')
 (AnswerA,AnswerB) = selectwindow(record_info_clear)      
 
 
 camera = cv2.VideoCapture('/Users/DennisLin/Videos/April30_2sentence1.mp4')
 
 #load the features
-row = np.load('/Users/DennisLin/feats_npy_file/{April30_2sentence1.mpg}_out_features.npy')
-[width, length] = row.shape
-width = int(width)
-length = int(length)
+#row = np.load('/Users/DennisLin/feats_npy_file/{April30_2sentence1.mpg}_out_features.npy')
+#[width, length] = row.shape
+#width = int(width)
+#length = int(length)
 
 
 ## initialize the HOG descriptor/person detector
@@ -103,6 +110,7 @@ length = int(length)
 
 # take first frame of the video
 (grabbed,frame_old) = camera.read()
+frame = frame_old[:,0:frame_old.shape[1]-100,:]
 #rame = frame_old[:,:,:]
 frame = frame_old[:,:,:]
 r = 400.0 / frame.shape[1]
@@ -113,21 +121,67 @@ frame = cv2.resize(frame, dim, interpolation = cv2.INTER_AREA)
 #rects = np.array([[x, y, x + w, y + h] for (x, y, w, h) in rects])
 #pick = non_max_suppression(rects, probs=None, overlapThresh=0.65)
 frame_num = 0
+index_A = 0
+index_B = 0
+number_A = 0
+number_B = 0
+first_AnswerA = AnswerA[0,0]
+first_AnswerB = AnswerB[0,0]
 while(camera.isOpened()):
     ret, frame = camera.read()
+    frame = frame[:,:,:]
     r = 400.0 / frame.shape[1]
     dim = (400, int(frame.shape[0] * r))
     frame = cv2.resize(frame, dim, interpolation = cv2.INTER_AREA)
+    print(index_A,frame_num,AnswerA[index_A,0])
 #    track_window2 = np.array([[pick[i,0], pick[i,1], 75,250] for i in range(pick.shape[0])])
 #    cv2.rectangle(frame, (x1,y1), (x1+w1,y1+h1), (0,255,0),2)
 #    for (xA, yA, xB, yB) in pick:
 #        cv2.rectangle(frame, (xA, yA), (xB, yB), (0, 255, 0), 2)
-    for i in range(AnswerA.shape[0]) :
-        if frame_num == AnswerA[i,0]:
-            cv2.rectangle(frame, (AnswerA[i,1],AnswerA[i,2]), (AnswerA[i,3], AnswerA[i,4]), (0, 255, 0), 2)
-    for i in range(AnswerB.shape[0]) :
-        if frame_num == AnswerB[i,0]:
-            cv2.rectangle(frame, (AnswerB[i,1],AnswerB[i,2]), (AnswerB[i,3], AnswerB[i,4]), (0, 0, 255), 2)            
+#    for i in range(AnswerA.shape[0]) :
+#        if frame_num == AnswerA[i,0]:
+#            cv2.rectangle(frame, (AnswerA[i,1],AnswerA[i,2]), (AnswerA[i,3], AnswerA[i,4]), (0, 255, 0), 2)
+#            index_A = index_A+1
+#            number_A = AnswerA[i,2]
+#        elif frame_num != AnswerA[i,0] and index_A !=0:
+#            cv2.rectangle(frame,(AnswerA[index_A-1,1],AnswerA[index_A-1,2]), (AnswerA[index_A-1,3], AnswerA[index_A-1,4]), (0, 255, 0), 2)
+#            number_A = AnswerA[index_A-1,1]
+#    for i in range(AnswerB.shape[0]) :
+#        if frame_num == AnswerB[i,0]:
+#            cv2.rectangle(frame, (AnswerB[i,1],AnswerB[i,2]), (AnswerB[i,3], AnswerB[i,4]), (0, 0, 255), 2)            
+#            index_B = index_B +1;
+#            number_B = AnswerB[i,1]
+#        elif frame_num != AnswerB[i,0] and index_B !=0:
+#            cv2.rectangle(frame,(AnswerB[index_B-1,1],AnswerB[index_B-1,2]), (AnswerB[index_B-1,3], AnswerB[index_B-1,4]), (0, 0, 255), 2)            
+#            number_B = AnswerB[index_B-1,1]
+    if frame_num == AnswerA[index_A,0]:
+        cv2.rectangle(frame,(AnswerA[index_A,1],AnswerA[index_A,2]),(AnswerA[index_A,3], AnswerA[index_A,4]), (0, 255, 0), 2)
+        index_A = index_A + 1 
+        number_A = (AnswerA[index_A,1]+AnswerA[index_A,3])
+    else:
+        AnswerA_temp = AnswerA[index_A,:].copy()
+        AnswerA_temp[0] = frame_num
+        AnswerA = np.insert(AnswerA,index_A,AnswerA_temp,axis = 0)
+        if frame_num > first_AnswerA:#600
+            cv2.rectangle(frame,(AnswerA[index_A,1],AnswerA[index_A,2]),(AnswerA[index_A,3], AnswerA[index_A,4]), (0, 255, 0), 2)
+            number_A = (AnswerA[index_A,1]+AnswerA[index_A,3])
+        index_A = index_A + 1
+        
+    if frame_num == AnswerB[index_B,0]:
+        cv2.rectangle(frame,(AnswerB[index_B,1],AnswerB[index_B,2]),(AnswerB[index_B,3], AnswerB[index_B,4]), (0, 0, 255), 2)
+        index_B = index_B + 1 
+        number_B = (AnswerB[index_B,1]+AnswerB[index_B,3])
+    else:
+        AnswerB_temp = AnswerB[index_B,:].copy()
+        AnswerB_temp[0] = frame_num
+        AnswerB = np.insert(AnswerB,index_B,AnswerB_temp,axis = 0)
+        
+        if frame_num > first_AnswerB:
+            cv2.rectangle(frame,(AnswerB[index_B,1],AnswerB[index_B,2]),(AnswerB[index_B,3], AnswerB[index_B,4]), (0, 0, 255), 2)
+            number_B = (AnswerB[index_B,1]+AnswerB[index_B,3])
+        index_B = index_B + 1
+    distance = np.linalg.norm(number_A-number_B)
+    cv2.putText(frame, "Distance: {}".format(distance), (10, 40),cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)    
     cv2.putText(frame, "Frame_index: {}".format(frame_num), (10, 20),cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
 #
             #    for e in range(width):
