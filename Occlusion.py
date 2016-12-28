@@ -61,11 +61,10 @@ def SVM_validation(A_feature_ori, B_feature_ori, A_feature_test_ori, B_feature_t
     for fold in range(K):
         if(fold != K-1):
             valid_data = X[each_part*fold : each_part*(fold+1) , :]
-            test_data = X_test[each_part_test*fold : each_part_test*(fold+1),: ]
             training_data = np.append(X[0 : each_part*fold, :], X[each_part*(fold+1): X.shape[0], :], axis=0)
         else:
             valid_data = X[each_part*fold : , :]
-            test_data = X_test[each_part_test :,:]
+            #test_data = X_test[each_part_test :,:]
             training_data = X[0 : each_part*fold, :]
         row_dim = training_data.shape[1]
         feature = training_data[:, 0:row_dim-1]
@@ -75,25 +74,38 @@ def SVM_validation(A_feature_ori, B_feature_ori, A_feature_test_ori, B_feature_t
 
 #        w = classifier.coef_[0]# what is this for
         correct = 0
-#        valid_data_num = valid_data.shape[0]
-        test_data_num = test_data.shape[0]
+        valid_data_num = valid_data.shape[0]
+        #test_data_num = test_data.shape[0]
         
-#        for valid in range(valid_data_num):
-#            pre = classifier.predict(valid_data[valid, 0:row_dim-1])
-#            if int(pre) == int(valid_data[valid][row_dim-1]):
+        for valid in range(valid_data_num):
+            pre = classifier.predict(valid_data[valid, 0:row_dim-1])
+            if int(pre) == int(valid_data[valid][row_dim-1]):
+                correct = correct + 1
+#        for test in range(test_data_num):
+#            pre = classifier.predict(test_data[test, 0:row_dim-1])
+#            if int(pre) == int(test_data[test][row_dim-1]):
 #                correct = correct + 1
-        for test in range(test_data_num):
+        tmp_accu = (correct/float(valid_data_num))*100
+        total_accu = total_accu + tmp_accu
+        print "[Fold " + str(fold+1) + "/" + str(K) + "] Accuracy = " + str(tmp_accu) + "%"
+    print "Total Accuracy = " + str(total_accu/K) + "%"    
+    
+    test_data = X_test[ : , : ]
+    test_data_num = test_data.shape[0]
+    tmp_accu = 0
+    total_accu = 0
+    correct = 0
+    for test in range(test_data_num):
             pre = classifier.predict(test_data[test, 0:row_dim-1])
             if int(pre) == int(test_data[test][row_dim-1]):
                 correct = correct + 1
-        tmp_accu = (correct/float(test_data_num))*100
-        total_accu = total_accu + tmp_accu
-        print "[Fold " + str(fold+1) + "/" + str(K) + "] Accuracy = " + str(tmp_accu) + "%"
-        
-    print "Total Accuracy = " + str(total_accu/K) + "%"
-    if total_accu/K > 50:
+    tmp_accu = (correct/float(test_data_num))*100
+    total_accu = total_accu + tmp_accu
+    print "Test: Accuracy = " + str(tmp_accu) + "%"
+
+    if tmp_accu >= 50:
         change_or_not = False
-    elif total_accu/K < 50:
+    elif tmp_accu < 50:
         change_or_not = True
     return change_or_not
 
@@ -146,11 +158,11 @@ for i in range(row_A):# i == frame_num
                     feature_train_tmp = feature_train_tmp_tmp[0,:,:]
                     for k in range(feature_train_tmp.shape[0]):
                         if (AnswerA[j,0] == feature_train_tmp[k,0]) and (AnswerA[j,1] < feature_train_tmp[k,2]*r) and (feature_train_tmp[k,2]*r < AnswerA[j,3]) and (AnswerA[j,2] < feature_train_tmp[k,1]*r) and (feature_train_tmp[k,1]*r < AnswerA[j,4]):      
-                            Answer_A_temp = feature_train_tmp[k,0:244]
+                            Answer_A_temp = feature_train_tmp[k,10:137]
                             Answer_A_array.append(Answer_A_temp)
                             Answer_A_feat_train = np.array(Answer_A_array)
                         if (AnswerB[j,0] == feature_train_tmp[k,0]) and  (AnswerB[j,1] < feature_train_tmp[k,2]*r) and (feature_train_tmp[k,2]*r < AnswerB[j,3]) and (AnswerB[j,2] < feature_train_tmp[k,1]*r) and (feature_train_tmp[k,1]*r < AnswerB[j,4]):
-                            Answer_B_temp = feature_train[k,0:244]
+                            Answer_B_temp = feature_train[k,10:137]
                             Answer_B_array.append(Answer_B_temp)
                             Answer_B_feat_train = np.array(Answer_B_array)
             ####################Train SVM######################
@@ -163,28 +175,59 @@ for i in range(row_A):# i == frame_num
     ##################################################################################### 
     elif occlusion_time > 0 and np.linalg.norm((AnswerA[i,1]+AnswerA[i,3])-(AnswerB[i,1]+AnswerB[i,3])) >= 70:
         frame_accum += 1 
-        if frame_accum == 100:           
-            recog_A = AnswerA[i-100:i]
-            recog_B = AnswerB[i-100:i]
+        accum = 100
+        if frame_accum == accum: 
+#            print(i)
+#            pdb.set_trace()
+            recog_A_array = []
+            recog_A_feat = np.array(recog_A_array)
+            recog_B_array = []
+            recog_B_feat = np.array(recog_B_array)
+            recog_A = AnswerA[i-accum:i]
+            recog_B = AnswerB[i-accum:i]
             feature_index1 = np.where(feature[:,0] <= i-1) 
-            feature_index2 = np.where(feature[feature_index1,0] >= i-100)
+            feature_index2 = np.where(feature[feature_index1,0] >= i-accum)
             feature_testing = feature[feature_index2[1],0:244] #HOG_features 
             for m in range(recog_A.shape[0]):
                 feature_testing_tmp_tmp = feature_testing[np.where(recog_A[m,0] == feature_testing[:,0]),:]
                 if len(feature_testing_tmp_tmp[0]) != 0:  
                     feature_testing_tmp = feature_testing_tmp_tmp[0,:,:]
-                    for n in range(feature_testing_tmp.shape[0]):  
+                    for n in range(feature_testing_tmp.shape[0]):
+                        
+#                        if recog_A[m,3] > recog_B[m,1] and recog_B[m,3] > recog_A[m,1] :
+#                            if recog_A[m,0] == feature_testing_tmp[n,0] and recog_A[m,1] < feature_testing_tmp[n,2]*r and feature_testing_tmp[n,2]*r < recog_B[m,1] and recog_A[m,2] < feature_testing_tmp[n,1]*r and feature_testing_tmp[n,1]*r < recog_A[m,4]:
+#                                recog_A_temp = feature_testing_tmp[n,0:244]
+#                                recog_A_array.append(recog_A_temp)
+#                                recog_A_feat = np.array(recog_A_array)
+#                            if recog_B[m,0] == feature_testing_tmp[n,0] and recog_A[m,3] < feature_testing_tmp[n,2]*r and feature_testing_tmp[n,2]*r < recog_B[m,3] and recog_B[m,2] < feature_testing_tmp[n,1]*r and feature_testing_tmp[n,1]*r < recog_B[m,4]:
+#                                recog_B_temp = feature_testing_tmp[n,0:244]
+#                                recog_B_array.append(recog_B_temp)
+#                                recog_B_feat = np.array(recog_B_array)
+#                        elif recog_B[m,3] > recog_A[m,1] and recog_B[m,1] > recog_A[m,3] :
+#                            if recog_A[m,0] == feature_testing_tmp[n,0] and recog_B[m,3] < feature_testing_tmp[n,2]*r and feature_testing_tmp[n,2]*r < recog_A[m,3] and recog_A[m,2] < feature_testing_tmp[n,1]*r and feature_testing_tmp[n,1]*r < recog_A[m,4]:
+#                                recog_A_temp = feature_testing_tmp[n,0:244]
+#                                recog_A_array.append(recog_A_temp)
+#                                recog_A_feat = np.array(recog_A_array)
+#                            if recog_B[m,0] == feature_testing_tmp[n,0] and recog_B[m,1] < feature_testing_tmp[n,2]*r and feature_testing_tmp[n,2]*r < recog_A[m,1] and recog_B[m,2] < feature_testing_tmp[n,1]*r and feature_testing_tmp[n,1]*r < recog_B[m,4]:
+#                                recog_B_temp = feature_testing_tmp[n,0:244]
+#                                recog_B_array.append(recog_B_temp)
+#                                recog_B_feat = np.array(recog_B_array)
+#                        else:
                         if recog_A[m,0] == feature_testing_tmp[n,0] and recog_A[m,1] < feature_testing_tmp[n,2]*r and feature_testing_tmp[n,2]*r < recog_A[m,3] and recog_A[m,2] < feature_testing_tmp[n,1]*r and feature_testing_tmp[n,1]*r < recog_A[m,4]:
-                            recog_A_temp = feature_testing_tmp[n,0:244]
+                            recog_A_temp = feature_testing_tmp[n,10:137]
                             recog_A_array.append(recog_A_temp)
                             recog_A_feat = np.array(recog_A_array)
                         if recog_B[m,0] == feature_testing_tmp[n,0] and recog_B[m,1] < feature_testing_tmp[n,2]*r and feature_testing_tmp[n,2]*r < recog_B[m,3] and recog_B[m,2] < feature_testing_tmp[n,1]*r and feature_testing_tmp[n,1]*r < recog_B[m,4]:
-                            recog_B_temp = feature_testing_tmp[n,0:244]
+                            recog_B_temp = feature_testing_tmp[n,10:137]
                             recog_B_array.append(recog_B_temp)
                             recog_B_feat = np.array(recog_B_array)
                     ###################SVM recognition#########################
-                        if (SVM_validation(Answer_A_feat_train, Answer_B_feat_train, recog_A_feat, recog_B_feat, 10, 244, 10) == True ):
-                            AnswerA[i-100:,:],AnswerB[i-100,:]=AnswerB[i-100:,:].copy(),AnswerA[i-100,:].copy()
+            print "The length of recog_A_feat is " + str(recog_A_feat.shape[0])
+            print "The length of recog_B_feat is " + str(recog_B_feat.shape[0])
+            pdb.set_trace()
+            if (recog_B_feat.shape[0] != 0) and (recog_A_feat.shape[0] != 0):
+                if (SVM_validation(Answer_A_feat_train, Answer_B_feat_train, recog_A_feat, recog_B_feat, 10, 244, 10) == True ) and (recog_B_feat.shape[0] != 0) and (recog_A_feat.shape[0] != 0):
+                    AnswerA[i-accum:,:],AnswerB[i-accum:,:]=AnswerB[i-accum:,:].copy(),AnswerA[i-accum:,:].copy()
                         
                     ###########################################################
                     ##################Change or not chaange####################
