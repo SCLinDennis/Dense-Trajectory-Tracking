@@ -169,24 +169,15 @@ for i in range(row_A):# i == frame_num
                             
             
             ###################################################
-        elif occlusion_time > 0:
-            frame_accum = 0
-            occlusion_time += 1
-    ##################################################################################### 
-    elif occlusion_time > 0 and np.linalg.norm((AnswerA[i,1]+AnswerA[i,3])-(AnswerB[i,1]+AnswerB[i,3])) >= 70:
-        frame_accum += 1 
-        accum = 100
-        if frame_accum == accum: 
-#            print(i)
-#            pdb.set_trace()
+        elif (occlusion_time > 0) and (frame_accum > 100):
             recog_A_array = []
             recog_A_feat = np.array(recog_A_array)
             recog_B_array = []
             recog_B_feat = np.array(recog_B_array)
-            recog_A = AnswerA[i-accum:i]
-            recog_B = AnswerB[i-accum:i]
+            recog_A = AnswerA[i-frame_accum:i]
+            recog_B = AnswerB[i-frame_accum:i]
             feature_index1 = np.where(feature[:,0] <= i-1) 
-            feature_index2 = np.where(feature[feature_index1,0] >= i-accum)
+            feature_index2 = np.where(feature[feature_index1,0] >= i-frame_accum)
             feature_testing = feature[feature_index2[1],0:244] #HOG_features 
             for m in range(recog_A.shape[0]):
                 feature_testing_tmp_tmp = feature_testing[np.where(recog_A[m,0] == feature_testing[:,0]),:]
@@ -194,40 +185,102 @@ for i in range(row_A):# i == frame_num
                     feature_testing_tmp = feature_testing_tmp_tmp[0,:,:]
                     for n in range(feature_testing_tmp.shape[0]):
                         
-#                        if recog_A[m,3] > recog_B[m,1] and recog_B[m,3] > recog_A[m,1] :
-#                            if recog_A[m,0] == feature_testing_tmp[n,0] and recog_A[m,1] < feature_testing_tmp[n,2]*r and feature_testing_tmp[n,2]*r < recog_B[m,1] and recog_A[m,2] < feature_testing_tmp[n,1]*r and feature_testing_tmp[n,1]*r < recog_A[m,4]:
-#                                recog_A_temp = feature_testing_tmp[n,0:244]
-#                                recog_A_array.append(recog_A_temp)
-#                                recog_A_feat = np.array(recog_A_array)
-#                            if recog_B[m,0] == feature_testing_tmp[n,0] and recog_A[m,3] < feature_testing_tmp[n,2]*r and feature_testing_tmp[n,2]*r < recog_B[m,3] and recog_B[m,2] < feature_testing_tmp[n,1]*r and feature_testing_tmp[n,1]*r < recog_B[m,4]:
-#                                recog_B_temp = feature_testing_tmp[n,0:244]
-#                                recog_B_array.append(recog_B_temp)
-#                                recog_B_feat = np.array(recog_B_array)
-#                        elif recog_B[m,3] > recog_A[m,1] and recog_B[m,1] > recog_A[m,3] :
-#                            if recog_A[m,0] == feature_testing_tmp[n,0] and recog_B[m,3] < feature_testing_tmp[n,2]*r and feature_testing_tmp[n,2]*r < recog_A[m,3] and recog_A[m,2] < feature_testing_tmp[n,1]*r and feature_testing_tmp[n,1]*r < recog_A[m,4]:
-#                                recog_A_temp = feature_testing_tmp[n,0:244]
-#                                recog_A_array.append(recog_A_temp)
-#                                recog_A_feat = np.array(recog_A_array)
-#                            if recog_B[m,0] == feature_testing_tmp[n,0] and recog_B[m,1] < feature_testing_tmp[n,2]*r and feature_testing_tmp[n,2]*r < recog_A[m,1] and recog_B[m,2] < feature_testing_tmp[n,1]*r and feature_testing_tmp[n,1]*r < recog_B[m,4]:
-#                                recog_B_temp = feature_testing_tmp[n,0:244]
-#                                recog_B_array.append(recog_B_temp)
-#                                recog_B_feat = np.array(recog_B_array)
-#                        else:
-                        if recog_A[m,0] == feature_testing_tmp[n,0] and recog_A[m,1] < feature_testing_tmp[n,2]*r and feature_testing_tmp[n,2]*r < recog_A[m,3] and recog_A[m,2] < feature_testing_tmp[n,1]*r and feature_testing_tmp[n,1]*r < recog_A[m,4]:
-                            recog_A_temp = feature_testing_tmp[n,10:137]
-                            recog_A_array.append(recog_A_temp)
-                            recog_A_feat = np.array(recog_A_array)
-                        if recog_B[m,0] == feature_testing_tmp[n,0] and recog_B[m,1] < feature_testing_tmp[n,2]*r and feature_testing_tmp[n,2]*r < recog_B[m,3] and recog_B[m,2] < feature_testing_tmp[n,1]*r and feature_testing_tmp[n,1]*r < recog_B[m,4]:
-                            recog_B_temp = feature_testing_tmp[n,10:137]
-                            recog_B_array.append(recog_B_temp)
-                            recog_B_feat = np.array(recog_B_array)
+                        if recog_A[m,3] > recog_B[m,1] and recog_B[m,3] > recog_A[m,1] :
+                            if recog_A[m,0] == feature_testing_tmp[n,0] and recog_A[m,1] < feature_testing_tmp[n,2]*r and feature_testing_tmp[n,2]*r < (recog_B[m,1]+recog_A[m,3])/2 and recog_A[m,2] < feature_testing_tmp[n,1]*r and feature_testing_tmp[n,1]*r < recog_A[m,4]:
+                                recog_A_temp = feature_testing_tmp[n,10:137]
+                                recog_A_array.append(recog_A_temp)
+                                recog_A_feat = np.array(recog_A_array)
+                            if recog_B[m,0] == feature_testing_tmp[n,0] and (recog_A[m,3]+recog_B[m,1])/2 < feature_testing_tmp[n,2]*r and feature_testing_tmp[n,2]*r < recog_B[m,3] and recog_B[m,2] < feature_testing_tmp[n,1]*r and feature_testing_tmp[n,1]*r < recog_B[m,4]:
+                                recog_B_temp = feature_testing_tmp[n,10:137]
+                                recog_B_array.append(recog_B_temp)
+                                recog_B_feat = np.array(recog_B_array)
+                        elif recog_B[m,3] > recog_A[m,1] and recog_B[m,1] > recog_A[m,3] :
+                            if recog_A[m,0] == feature_testing_tmp[n,0] and (recog_B[m,3]+recog_A[m,1])/2 < feature_testing_tmp[n,2]*r and feature_testing_tmp[n,2]*r < recog_A[m,3] and recog_A[m,2] < feature_testing_tmp[n,1]*r and feature_testing_tmp[n,1]*r < recog_A[m,4]:
+                                recog_A_temp = feature_testing_tmp[n,10:137]
+                                recog_A_array.append(recog_A_temp)
+                                recog_A_feat = np.array(recog_A_array)
+                            if recog_B[m,0] == feature_testing_tmp[n,0] and recog_B[m,1] < feature_testing_tmp[n,2]*r and feature_testing_tmp[n,2]*r < (recog_A[m,1]+recog_B[m,3])/2 and recog_B[m,2] < feature_testing_tmp[n,1]*r and feature_testing_tmp[n,1]*r < recog_B[m,4]:
+                                recog_B_temp = feature_testing_tmp[n,10:137]
+                                recog_B_array.append(recog_B_temp)
+                                recog_B_feat = np.array(recog_B_array)
+                        else:
+                            if recog_A[m,0] == feature_testing_tmp[n,0] and recog_A[m,1] < feature_testing_tmp[n,2]*r and feature_testing_tmp[n,2]*r < recog_A[m,3] and recog_A[m,2] < feature_testing_tmp[n,1]*r and feature_testing_tmp[n,1]*r < recog_A[m,4]:
+                                recog_A_temp = feature_testing_tmp[n,10:137]
+                                recog_A_array.append(recog_A_temp)
+                                recog_A_feat = np.array(recog_A_array)
+                            if recog_B[m,0] == feature_testing_tmp[n,0] and recog_B[m,1] < feature_testing_tmp[n,2]*r and feature_testing_tmp[n,2]*r < recog_B[m,3] and recog_B[m,2] < feature_testing_tmp[n,1]*r and feature_testing_tmp[n,1]*r < recog_B[m,4]:
+                                recog_B_temp = feature_testing_tmp[n,10:137]
+                                recog_B_array.append(recog_B_temp)
+                                recog_B_feat = np.array(recog_B_array)
                     ###################SVM recognition#########################
             print "The length of recog_A_feat is " + str(recog_A_feat.shape[0])
             print "The length of recog_B_feat is " + str(recog_B_feat.shape[0])
             pdb.set_trace()
             if (recog_B_feat.shape[0] != 0) and (recog_A_feat.shape[0] != 0):
                 if (SVM_validation(Answer_A_feat_train, Answer_B_feat_train, recog_A_feat, recog_B_feat, 10, 244, 10) == True ) and (recog_B_feat.shape[0] != 0) and (recog_A_feat.shape[0] != 0):
-                    AnswerA[i-accum:,:],AnswerB[i-accum:,:]=AnswerB[i-accum:,:].copy(),AnswerA[i-accum:,:].copy()
+                    AnswerA[i-frame_accum:,:],AnswerB[i-frame_accum:,:]=AnswerB[i-frame_accum:,:].copy(),AnswerA[i-frame_accum:,:].copy()
+                        
+            frame_accum = 0
+            occlusion_time += 1
+        elif (occlusion_time > 0) and (frame_accum <= 100):
+            frame_accum = 0
+            occlusion_time += 1
+    ##################################################################################### 
+    elif occlusion_time > 0 and np.linalg.norm((AnswerA[i,1]+AnswerA[i,3])-(AnswerB[i,1]+AnswerB[i,3])) >= 70:
+        frame_accum += 1 
+#        accum = 100
+#        if frame_accum == accum: 
+##            print(i)
+##            pdb.set_trace()
+#            recog_A_array = []
+#            recog_A_feat = np.array(recog_A_array)
+#            recog_B_array = []
+#            recog_B_feat = np.array(recog_B_array)
+#            recog_A = AnswerA[i-accum:i]
+#            recog_B = AnswerB[i-accum:i]
+#            feature_index1 = np.where(feature[:,0] <= i-1) 
+#            feature_index2 = np.where(feature[feature_index1,0] >= i-accum)
+#            feature_testing = feature[feature_index2[1],0:244] #HOG_features 
+#            for m in range(recog_A.shape[0]):
+#                feature_testing_tmp_tmp = feature_testing[np.where(recog_A[m,0] == feature_testing[:,0]),:]
+#                if len(feature_testing_tmp_tmp[0]) != 0:  
+#                    feature_testing_tmp = feature_testing_tmp_tmp[0,:,:]
+#                    for n in range(feature_testing_tmp.shape[0]):
+#                        
+##                        if recog_A[m,3] > recog_B[m,1] and recog_B[m,3] > recog_A[m,1] :
+##                            if recog_A[m,0] == feature_testing_tmp[n,0] and recog_A[m,1] < feature_testing_tmp[n,2]*r and feature_testing_tmp[n,2]*r < recog_B[m,1] and recog_A[m,2] < feature_testing_tmp[n,1]*r and feature_testing_tmp[n,1]*r < recog_A[m,4]:
+##                                recog_A_temp = feature_testing_tmp[n,0:244]
+##                                recog_A_array.append(recog_A_temp)
+##                                recog_A_feat = np.array(recog_A_array)
+##                            if recog_B[m,0] == feature_testing_tmp[n,0] and recog_A[m,3] < feature_testing_tmp[n,2]*r and feature_testing_tmp[n,2]*r < recog_B[m,3] and recog_B[m,2] < feature_testing_tmp[n,1]*r and feature_testing_tmp[n,1]*r < recog_B[m,4]:
+##                                recog_B_temp = feature_testing_tmp[n,0:244]
+##                                recog_B_array.append(recog_B_temp)
+##                                recog_B_feat = np.array(recog_B_array)
+##                        elif recog_B[m,3] > recog_A[m,1] and recog_B[m,1] > recog_A[m,3] :
+##                            if recog_A[m,0] == feature_testing_tmp[n,0] and recog_B[m,3] < feature_testing_tmp[n,2]*r and feature_testing_tmp[n,2]*r < recog_A[m,3] and recog_A[m,2] < feature_testing_tmp[n,1]*r and feature_testing_tmp[n,1]*r < recog_A[m,4]:
+##                                recog_A_temp = feature_testing_tmp[n,0:244]
+##                                recog_A_array.append(recog_A_temp)
+##                                recog_A_feat = np.array(recog_A_array)
+##                            if recog_B[m,0] == feature_testing_tmp[n,0] and recog_B[m,1] < feature_testing_tmp[n,2]*r and feature_testing_tmp[n,2]*r < recog_A[m,1] and recog_B[m,2] < feature_testing_tmp[n,1]*r and feature_testing_tmp[n,1]*r < recog_B[m,4]:
+##                                recog_B_temp = feature_testing_tmp[n,0:244]
+##                                recog_B_array.append(recog_B_temp)
+##                                recog_B_feat = np.array(recog_B_array)
+##                        else:
+#                        if recog_A[m,0] == feature_testing_tmp[n,0] and recog_A[m,1] < feature_testing_tmp[n,2]*r and feature_testing_tmp[n,2]*r < recog_A[m,3] and recog_A[m,2] < feature_testing_tmp[n,1]*r and feature_testing_tmp[n,1]*r < recog_A[m,4]:
+#                            recog_A_temp = feature_testing_tmp[n,10:137]
+#                            recog_A_array.append(recog_A_temp)
+#                            recog_A_feat = np.array(recog_A_array)
+#                        if recog_B[m,0] == feature_testing_tmp[n,0] and recog_B[m,1] < feature_testing_tmp[n,2]*r and feature_testing_tmp[n,2]*r < recog_B[m,3] and recog_B[m,2] < feature_testing_tmp[n,1]*r and feature_testing_tmp[n,1]*r < recog_B[m,4]:
+#                            recog_B_temp = feature_testing_tmp[n,10:137]
+#                            recog_B_array.append(recog_B_temp)
+#                            recog_B_feat = np.array(recog_B_array)
+#                    ###################SVM recognition#########################
+#            print "The length of recog_A_feat is " + str(recog_A_feat.shape[0])
+#            print "The length of recog_B_feat is " + str(recog_B_feat.shape[0])
+#            pdb.set_trace()
+#            if (recog_B_feat.shape[0] != 0) and (recog_A_feat.shape[0] != 0):
+#                if (SVM_validation(Answer_A_feat_train, Answer_B_feat_train, recog_A_feat, recog_B_feat, 10, 244, 10) == True ) and (recog_B_feat.shape[0] != 0) and (recog_A_feat.shape[0] != 0):
+#                    AnswerA[i-accum:,:],AnswerB[i-accum:,:]=AnswerB[i-accum:,:].copy(),AnswerA[i-accum:,:].copy()
                         
                     ###########################################################
                     ##################Change or not chaange####################
