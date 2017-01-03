@@ -52,8 +52,8 @@ def threewindow(record_info_clear_tmp):
                 two_window = []
                 two_window = record_info_clear_tmp[temp[0],:]
             if temp[0].shape[0] == 3:
-                my_answer = distance(two_window_info,record_info_clear_tmp[temp[0],:])
-                print my_answer
+                my_answer = distance(two_window,record_info_clear_tmp[temp[0],:])
+#                print my_answer
                 index_tmp = np.where((record_info_clear_tmp[:] == my_answer[0]).all(axis = 1))
                 index_delete = index_delete + (index_tmp[0][0],)
     record_info_clear = np.delete(record_info_clear_tmp, index_delete, axis = 0)
@@ -128,7 +128,7 @@ AnswerA = np.array([])
 AnswerB = np.array([])
 #record_info_clear = unique_rows(record_info)
 #record_info_clear = np.load('D://senior/CCL/record_info_clear_mask_NMS.npy')
-record_info2 = np.load('/Users/DennisLin/record_info_npy/April30_2sentence3_record_info.npy')
+record_info2 = np.load('/Users/DennisLin/record_info_npy/April30_paraphrase2_recoed_info.npy')
 record_info_clear_tmp = unique_rows(record_info2)
 ###detect three window#####
 record_info_clear = threewindow(record_info_clear_tmp)
@@ -136,7 +136,7 @@ record_info_clear = threewindow(record_info_clear_tmp)
 #record_info = np.load('D://senior/CCL/special_topic/record_info.npy')
 #record_info_clear = unique_rows(record_info)
 
-camera = cv2.VideoCapture('/Users/DennisLin/Videos/April30/April30_2sentence3.mp4')
+camera = cv2.VideoCapture('/Users/DennisLin/Videos/April30/April30_paraphrase2.mp4')
 
 #load the features
 #row = np.load('D://senior/CCL/special_topic/{April30_2sentence1.mpg}_out_features.npy')
@@ -242,8 +242,8 @@ while(camera.isOpened()):
 #    elif frame_num == 8776:
 #        break
     frame_num +=1
-    if frame_num == 8784:
-        break
+#    if frame_num == 8784:
+#        break
 camera.release()
 cv2.destroyAllWindows()
 #np.save('AnswerA.npy',AnswerA)
