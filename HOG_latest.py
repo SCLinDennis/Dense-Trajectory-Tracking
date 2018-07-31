@@ -102,6 +102,7 @@ person_B = []
 person_B_info = np.array(person_B)
 
 count = 0
+##
 
 while True:
     
